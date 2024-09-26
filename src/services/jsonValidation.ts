@@ -17,7 +17,6 @@ export class JSONValidation {
 	private promise: PromiseConstructor;
 
 	private validationEnabled: boolean | undefined;
-	private commentSeverity: DiagnosticSeverity | undefined;
 
 	public constructor(jsonSchemaService: JSONSchemaService, promiseConstructor: PromiseConstructor) {
 		this.jsonSchemaService = jsonSchemaService;
@@ -28,7 +27,6 @@ export class JSONValidation {
 	public configure(raw: LanguageSettings) {
 		if (raw) {
 			this.validationEnabled = raw.validate !== false;
-			this.commentSeverity = raw.allowComments ? undefined : DiagnosticSeverity.Error;
 		}
 	}
 
@@ -47,8 +45,6 @@ export class JSONValidation {
 			}
 		};
 		const getDiagnostics = (schema: ResolvedSchema | undefined) => {
-			let trailingCommaSeverity = documentSettings?.trailingCommas ? toDiagnosticSeverity(documentSettings.trailingCommas) : DiagnosticSeverity.Error;
-			let commentSeverity = documentSettings?.comments ? toDiagnosticSeverity(documentSettings.comments) : this.commentSeverity;
 			let schemaValidation = documentSettings?.schemaValidation ? toDiagnosticSeverity(documentSettings.schemaValidation) : DiagnosticSeverity.Warning;
 			let schemaRequest = documentSettings?.schemaRequest ? toDiagnosticSeverity(documentSettings.schemaRequest) : DiagnosticSeverity.Warning;
 
@@ -78,30 +74,6 @@ export class JSONValidation {
 						semanticErrors.forEach(addProblem); 
 					}
 				}
-				if (schemaAllowsComments(schema.schema)) {
-					commentSeverity = undefined;
-				}
-
-				if (schemaAllowsTrailingCommas(schema.schema)) {
-					trailingCommaSeverity = undefined;
-				}
-			}
-
-			for (const p of jsonDocument.syntaxErrors) {
-				if (p.code === ErrorCode.TrailingComma) {
-					if (typeof trailingCommaSeverity !== 'number') {
-						continue;
-					}
-					p.severity = trailingCommaSeverity;
-				}
-				addProblem(p);
-			}
-
-			if (typeof commentSeverity === 'number') {
-				const message = l10n.t('Comments are not permitted in JSON.');
-				jsonDocument.comments.forEach(c => {
-					addProblem(Diagnostic.create(c, message, commentSeverity, ErrorCode.CommentNotPermitted));
-				});
 			}
 			return diagnostics;
 		};

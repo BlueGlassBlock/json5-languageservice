@@ -57,10 +57,8 @@ export enum ErrorCode {
 	ValueExpected = 0x204,
 	CommaOrCloseBacketExpected = 0x205,
 	CommaOrCloseBraceExpected = 0x206,
-	TrailingComma = 0x207,
-	DuplicateKey = 0x208,
-	CommentNotPermitted = 0x209,
-	PropertyKeysMustBeDoublequoted = 0x210,
+	DuplicateKey = 0x207,
+	PropertyKeysMustBeDoublequoted = 0x208,
 	SchemaResolveError = 0x300,
 	SchemaUnsupportedFeature = 0x301
 }
@@ -124,11 +122,6 @@ export interface LanguageSettings {
 	 * If set, the validator will return syntax and semantic errors.
 	 */
 	validate?: boolean;
-	/**
-	 * Defines whether comments are allowed or not. If set to false, comments will be reported as errors.
-	 * DocumentLanguageSettings.allowComments will override this setting.
-	 */
-	allowComments?: boolean;
 
 	/**
 	 * A list of known schemas and/or associations of schemas to file names.
@@ -148,16 +141,6 @@ export enum SchemaDraft {
 }
 
 export interface DocumentLanguageSettings {
-	/**
-	 * The severity of reported comments. If not set, 'LanguageSettings.allowComments' defines whether comments are ignored or reported as errors.
-	 */
-	comments?: SeverityLevel;
-
-	/**
-	 * The severity of reported trailing commas. If not set, trailing commas will be reported as errors.
-	 */
-	trailingCommas?: SeverityLevel;
-
 	/**
 	 * The severity of problems from schema validation. If set to 'ignore', schema validation will be skipped. If not set, 'warning' is used.
 	 */

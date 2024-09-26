@@ -3,7 +3,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { createScanner, SyntaxKind, JSONScanner } from 'jsonc-parser';
+import { createScanner, SyntaxKind, JSONScanner } from '@blueglassblock/json5-kit';
 import { TextDocument, TextEdit, FormattingOptions, Position, Range, TextDocumentContentChangeEvent, SortOptions } from '../jsonLanguageTypes';
 import { format } from './format';
 import { PropertyTree, Container } from './propertyTree';

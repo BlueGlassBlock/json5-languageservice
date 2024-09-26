@@ -1,36 +1,44 @@
 {
-  "name": "vscode-json-languageservice",
-  "version": "5.4.1",
-  "description": "Language service for JSON",
+  "name": "@blueglassblock/json5-languageservice",
+  "version": "0.1.0",
+  "description": "Language service for JSON5",
   "main": "./lib/umd/jsonLanguageService.js",
   "typings": "./lib/umd/jsonLanguageService",
   "module": "./lib/esm/jsonLanguageService.js",
   "author": "Microsoft Corporation",
+  "maintainers": [
+    "Microsoft Corporation",
+    {
+      "name": "Nyuan Zhang",
+      "email": "blueglassblock@outlook.com"
+    }
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-json-languageservice"
+    "url": "https://github.com/BlueGlassBlock/json5-languageservice"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-json-languageservice"
+    "url": "https://github.com/BlueGlassBlock/json5-languageservice"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
     "@types/node": "18.x",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-  "eslint": "^8.57.0",
+    "eslint": "^8.57.0",
     "json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
     "mocha": "^10.7.3",
     "rimraf": "^6.0.1",
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "jsonc-parser": "^3.3.1",
+    "@blueglassblock/json5-kit": "^0.1.0",
+    "@vscode/l10n": "^0.0.18",
+    "json5": "^2.2.3",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
-    "vscode-uri": "^3.0.8",
-    "@vscode/l10n": "^0.0.18"
+    "vscode-uri": "^3.0.8"
   },
   "scripts": {
     "prepack": "npm run clean && npm run compile-esm && npm run test && npm run remove-sourcemap-refs",
@@ -46,5 +54,35 @@
     "lint": "eslint src/**/*.ts",
     "install-types-next": "npm install vscode-languageserver-types@next -f -S && npm install vscode-languageserver-textdocument@next -f -S",
     "sample": "npm run compile && node ./lib/umd/example/sample.js"
+  },
+  "keywords": [
+    "json5",
+    "syntax",
+    "highlight"
+  ],
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "json5",
+        "aliases": [
+          "JSON5",
+          "json5"
+        ],
+        "extensions": [
+          ".json5"
+        ],
+        "configuration": "./json5.configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "json5",
+        "scopeName": "source.json5",
+        "path": "./json5.tmGrammar.json"
+      }
+    ]
   }
 }

@@ -186,4 +186,40 @@ suite('JSON Hover', () => {
 		assert.deepEqual(result.contents, ['test://test.json: prop1/0']);
 
 	});
+
+	test('JSON5 schema', async function () {
+
+		const content = '{a: 42, b: "hello", c: false}';
+		const schema: JSONSchema = {
+			type: 'object',
+			description: 'a very special object',
+			properties: {
+				'a': {
+					type: 'number',
+					description: 'A'
+				},
+				'b': {
+					type: 'string',
+					description: 'B'
+				},
+				'c': {
+					type: 'boolean',
+					description: 'C'
+				}
+			}
+		};
+		await testComputeInfo(content, schema, { line: 0, character: 0 }).then((result) => {
+			assert.deepEqual(result.contents, [MarkedString.fromPlainText('a very special object')]);
+		});
+		await testComputeInfo(content, schema, { line: 0, character: 1 }).then((result) => {
+			assert.deepEqual(result.contents, [MarkedString.fromPlainText('A')]);
+		});
+		await testComputeInfo(content, schema, { line: 0, character: 24 }).then((result) => {
+			assert.deepEqual(result.contents, [MarkedString.fromPlainText('C')]);
+		});
+		await testComputeInfo(content, schema, { line: 0, character: 5 }).then((result) => {
+			assert.deepEqual(result.contents, [MarkedString.fromPlainText('A')]);
+		});
+	});
+
 });

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as Parser from '../parser/jsonParser';
-import * as Json from 'jsonc-parser';
+import * as Json from '@blueglassblock/json5-kit';
 import * as SchemaService from './jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { JSONWorkerContribution, CompletionsCollector, JSONCompletionItem } from '../jsonContributions';

@@ -1,4 +1,4 @@
-import { format as formatJSON, Range as JSONCRange } from 'jsonc-parser'; 
+import { format as formatJSON, Range as JSONCRange } from '@blueglassblock/json5-kit'; 
 import { TextDocument, Range, TextEdit, FormattingOptions } from '../jsonLanguageTypes';
 
 export function format(documentToFormat: TextDocument, formattingOptions?: FormattingOptions, formattingRange?: Range | undefined): TextEdit[] {

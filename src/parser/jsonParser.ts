@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as Json from 'jsonc-parser';
+import * as Json from '@blueglassblock/json5-kit';
+import * as JSON5 from 'json5';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isBoolean, isString, isDefined, isObject } from '../utils/objects';
 import { extendedRegExp, stringLength } from '../utils/strings';
@@ -1223,9 +1224,6 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 				const commaOffset = scanner.getTokenOffset();
 				_scanNext(); // consume comma
 				if (scanner.getToken() === Json.SyntaxKind.CloseBracketToken) {
-					if (needsComma) {
-						_errorAtRange(l10n.t('Trailing comma'), ErrorCode.TrailingComma, commaOffset, commaOffset + 1);
-					}
 					continue;
 				}
 			} else if (needsComma) {
@@ -1251,7 +1249,7 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 
 	function _parseProperty(parent: ObjectASTNode | undefined, keysSeen: { [key: string]: (PropertyASTNode | boolean) }): PropertyASTNode | undefined {
 		const node = new PropertyASTNodeImpl(parent, scanner.getTokenOffset(), keyPlaceholder);
-		let key = _parseString(node);
+		let key = _parseString(node) || _parseIdentifier(node);
 		if (!key) {
 			if (scanner.getToken() === Json.SyntaxKind.Unknown) {
 				// give a more helpful error message
@@ -1317,9 +1315,6 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 				const commaOffset = scanner.getTokenOffset();
 				_scanNext(); // consume comma
 				if (scanner.getToken() === Json.SyntaxKind.CloseBraceToken) {
-					if (needsComma) {
-						_errorAtRange(l10n.t('Trailing comma'), ErrorCode.TrailingComma, commaOffset, commaOffset + 1);
-					}
 					continue;
 				}
 			} else if (needsComma) {
@@ -1351,6 +1346,18 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		return _finalize(node, true);
 	}
 
+	function _parseIdentifier(parent: ASTNode | undefined): StringASTNode | undefined {
+		if (scanner.getToken() !== Json.SyntaxKind.PossibleIdentifier) {
+			return undefined;
+		}
+
+		const node = new StringASTNodeImpl(parent, scanner.getTokenOffset());
+		node.value = scanner.getTokenValue();
+
+		return _finalize(node, true);
+	}
+
+
 	function _parseNumber(parent: ASTNode | undefined): NumberASTNode | undefined {
 		if (scanner.getToken() !== Json.SyntaxKind.NumericLiteral) {
 			return undefined;
@@ -1360,7 +1367,7 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		if (scanner.getTokenError() === Json.ScanError.None) {
 			const tokenValue = scanner.getTokenValue();
 			try {
-				const numberValue = JSON.parse(tokenValue);
+				const numberValue = JSON5.parse(tokenValue);
 				if (!isNumber(numberValue)) {
 					return _error(l10n.t('Invalid number format.'), ErrorCode.Undefined, node);
 				}

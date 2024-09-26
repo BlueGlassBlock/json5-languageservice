@@ -78,13 +78,14 @@ suite('JSON Parser', () => {
 		isValid('{"key": "value"}');
 		isValid('{"key1": true, "key2": 3, "key3": [null], "key4": { "nested": {}}}');
 		isValid('{"constructor": true }');
+		isValid('{\'key\': 3}');
+		isValid('{key: 3}');
+		isValid('{"key":42, }');
 
 		isInvalid('{');
 		isInvalid('{3:3}');
-		isInvalid('{\'key\': 3}');
 		isInvalid('{"key" 3}', ErrorCode.ColonExpected);
 		isInvalid('{"key":3 "key2": 4}', ErrorCode.CommaExpected);
-		isInvalid('{"key":42, }', ErrorCode.TrailingComma);
 		isInvalid('{"key:42', ErrorCode.UnexpectedEndOfString, ErrorCode.ColonExpected);
 	});
 
@@ -92,12 +93,12 @@ suite('JSON Parser', () => {
 		isValid('[]');
 		isValid('[1, 2]');
 		isValid('[1, "string", false, {}, [null]]');
+		isValid('[1, ]');
 
 		isInvalid('[');
 		isInvalid('[,]', ErrorCode.ValueExpected);
 		isInvalid('[1 2]', ErrorCode.CommaExpected);
 		isInvalid('[true false]', ErrorCode.CommaExpected);
-		isInvalid('[1, ]', ErrorCode.TrailingComma);
 		isInvalid('[[]', ErrorCode.CommaOrCloseBacketExpected);
 		isInvalid('["something"');
 		isInvalid('[magic]');
@@ -107,6 +108,7 @@ suite('JSON Parser', () => {
 		isValid('["string"]');
 		isValid('["\\"\\\\\\/\\b\\f\\n\\r\\t\\u1234\\u12AB"]');
 		isValid('["\\\\"]');
+		isValid('[\'string\']');
 
 		isInvalid('["');
 		isInvalid('["]');
@@ -114,16 +116,15 @@ suite('JSON Parser', () => {
 		isInvalid('["\\u"]');
 		isInvalid('["\\u123"]');
 		isInvalid('["\\u123Z"]');
-		isInvalid('[\'string\']');
 		isInvalid('"\tabc"', ErrorCode.InvalidCharacter);
 	});
 
 	test('Numbers', function () {
 		isValid('[0, -1, 186.1, 0.123, -1.583e+4, 1.583E-4, 5e8]');
 
-		isInvalid('[+1]');
+		isValid('[+1]');
+		isValid('[1.]');
 		isInvalid('[01]');
-		isInvalid('[1.]');
 		isInvalid('[1.1+3]');
 		isInvalid('[1.4e]');
 		isInvalid('[-A]');
@@ -244,9 +245,9 @@ suite('JSON Parser', () => {
 
 	test('Expand errors to entire tokens', function () {
 
-		const content = '{\n"key":32,\nerror\n}';
+		const content = '{\n"key":32,\n"key2":error\n}';
 		const { jsonDoc } = toDocument(content);
-		assert.equal(jsonDoc.syntaxErrors.length, 2);
+		assert.equal(jsonDoc.syntaxErrors.length, 1);
 		assert.deepEqual(jsonDoc.syntaxErrors[0].range, toRange(content, content.indexOf('error'), 5));
 	});
 
@@ -2600,59 +2601,4 @@ suite('JSON Parser', () => {
 		assert.strictEqual(semanticErrors!.length, 1);
 		assert.strictEqual(semanticErrors![0].message, 'Value is not accepted. Valid values: "a", "b", "c", "d".');
 	});
-
-	test('validate DocumentLanguageSettings: trailingCommas', async function () {
-		const { textDoc, jsonDoc } = toDocument('{ "pages": [  "pages/index", "pages/log", ] }');
-
-		const ls = getLanguageService({});
-		let res = await ls.doValidation(textDoc, jsonDoc);
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Trailing comma');
-		assert.strictEqual(res[0].severity, DiagnosticSeverity.Error);
-
-		res = await ls.doValidation(textDoc, jsonDoc, {});
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Trailing comma');
-		assert.strictEqual(res[0].severity, DiagnosticSeverity.Error);
-
-		res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'warning' });
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Trailing comma');
-		assert.strictEqual(res[0].severity, DiagnosticSeverity.Warning);
-
-		res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' });
-		assert.strictEqual(res.length, 0);
-
-		const schema: JSONSchema = { type: 'object', required: ['foo'] };
-		res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' }, schema);
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Missing property "foo".');
-	});
-
-	test('validate DocumentLanguageSettings: comments', async function () {
-		const { textDoc, jsonDoc } = toDocument('{ "count": 1 /* change */ }');
-
-		const ls = getLanguageService({});
-		ls.configure({ allowComments: false });
-		let res = await ls.doValidation(textDoc, jsonDoc);
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Comments are not permitted in JSON.');
-		assert.strictEqual(res[0].severity, DiagnosticSeverity.Error);
-
-		res = await ls.doValidation(textDoc, jsonDoc, {});
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Comments are not permitted in JSON.');
-		assert.strictEqual(res[0].severity, DiagnosticSeverity.Error);
-
-		res = await ls.doValidation(textDoc, jsonDoc, { comments: 'ignore' });
-		assert.strictEqual(res.length, 0);
-
-		res = await ls.doValidation(textDoc, jsonDoc, { comments: 'warning' });
-		assert.strictEqual(res.length, 1);
-		assert.strictEqual(res[0].message, 'Comments are not permitted in JSON.');
-		assert.strictEqual(res[0].severity, DiagnosticSeverity.Warning);
-
-	});
-
-
 });

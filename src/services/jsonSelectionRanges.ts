@@ -6,7 +6,7 @@
 import { Range, Position, SelectionRange, TextDocument } from '../jsonLanguageTypes';
 
 import { JSONDocument } from '../parser/jsonParser';
-import { SyntaxKind, createScanner } from 'jsonc-parser';
+import { SyntaxKind, createScanner } from '@blueglassblock/json5-kit';
 
 export function getSelectionRanges(document: TextDocument, positions: Position[], doc: JSONDocument): SelectionRange[] {
 

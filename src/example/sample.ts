@@ -35,7 +35,7 @@ async function main() {
         }
     });
     // associate `*.data.json` with the `foo://server/data.schema.json` schema
-    jsonLanguageService.configure({ allowComments: false, schemas: [{ fileMatch: ["*.data.json"], uri: jsonSchemaUri }] });
+    jsonLanguageService.configure({schemas: [{ fileMatch: ["*.data.json"], uri: jsonSchemaUri }] });
 
     const jsonDocument = jsonLanguageService.parseJSONDocument(textDocument);
 
