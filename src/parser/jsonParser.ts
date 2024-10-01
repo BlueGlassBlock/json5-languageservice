@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as Json from '@blueglassblock/json5-kit';
-import * as JSON5 from 'json5';
+import JSON5 from 'json5';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isBoolean, isString, isDefined, isObject } from '../utils/objects';
 import { extendedRegExp, stringLength } from '../utils/strings';

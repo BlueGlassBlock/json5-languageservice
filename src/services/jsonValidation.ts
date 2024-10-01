@@ -75,6 +75,9 @@ export class JSONValidation {
 					}
 				}
 			}
+			for (const p of jsonDocument.syntaxErrors) {
+				addProblem(p);
+			}
 			return diagnostics;
 		};
 
