@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as Json from '@blueglassblock/json5-kit';
-import JSON5 from 'json5';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isBoolean, isString, isDefined, isObject } from '../utils/objects';
 import { extendedRegExp, stringLength } from '../utils/strings';
@@ -1367,7 +1366,7 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		if (scanner.getTokenError() === Json.ScanError.None) {
 			const tokenValue = scanner.getTokenValue();
 			try {
-				const numberValue = JSON5.parse(tokenValue);
+				const numberValue = Number(tokenValue);
 				if (!isNumber(numberValue)) {
 					return _error(l10n.t('Invalid number format.'), ErrorCode.Undefined, node);
 				}

@@ -35,7 +35,6 @@
   "dependencies": {
     "@blueglassblock/json5-kit": "^0.1.0",
     "@vscode/l10n": "^0.0.18",
-    "json5": "^2.2.3",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
     "vscode-uri": "^3.0.8"
@@ -54,5 +53,5 @@
     "lint": "eslint src/**/*.ts",
     "install-types-next": "npm install vscode-languageserver-types@next -f -S && npm install vscode-languageserver-textdocument@next -f -S",
     "sample": "npm run compile && node ./lib/umd/example/sample.js"
-  }  
+  }
 }
