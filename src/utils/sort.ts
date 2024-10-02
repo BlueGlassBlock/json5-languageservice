@@ -120,6 +120,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
         switch (token) {
 
             // When a string is found, if it follows an open brace or a comma token and it is within an object, then it corresponds to a key name, not a simple string
+            case SyntaxKind.PossibleIdentifier:
             case SyntaxKind.StringLiteral: {
                 if ((lastNonTriviaNonCommentToken === undefined
                     || lastNonTriviaNonCommentToken === SyntaxKind.OpenBraceToken

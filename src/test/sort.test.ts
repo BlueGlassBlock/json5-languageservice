@@ -1483,4 +1483,24 @@ suite('Sort JSON', () => {
 
         testSort(content, expected, formattingOptions);
     });
+
+    test('Sort JSON5 mixed object keys', () => {
+        const content = [
+            '{',
+            '  bbbb: "bbbb",  ',
+            "  'aaaa': 'tEst',",  
+            '  "cccc": "tesT",',
+            '}'
+        ].join('\n');
+
+        const expected = [
+            '{',
+            "  'aaaa': 'tEst',",
+            '  bbbb: "bbbb",',
+            '  "cccc": "tesT"',
+            '}'
+        ].join('\n');
+
+        testSort(content, expected, formattingOptions);
+    });
 });

@@ -58,7 +58,7 @@ export enum ErrorCode {
 	CommaOrCloseBacketExpected = 0x205,
 	CommaOrCloseBraceExpected = 0x206,
 	DuplicateKey = 0x207,
-	PropertyKeysMustBeDoublequoted = 0x208,
+	PropertyKeysMustBeCorrectlyQuoted = 0x208,
 	SchemaResolveError = 0x300,
 	SchemaUnsupportedFeature = 0x301
 }
