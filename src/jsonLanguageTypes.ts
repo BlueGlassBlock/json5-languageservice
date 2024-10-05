@@ -93,6 +93,7 @@ export interface ArrayASTNode extends BaseASTNode {
 export interface StringASTNode extends BaseASTNode {
 	readonly type: 'string';
 	readonly value: string;
+	readonly quote: null | 'single' | 'double';
 }
 export interface NumberASTNode extends BaseASTNode {
 	readonly type: 'number';
@@ -354,6 +355,9 @@ export interface ColorInformationContext {
 export interface FormattingOptions extends LSPFormattingOptions {
 	insertFinalNewline?: boolean;
 	keepLines?: boolean;
+	keyQuotes?: 'none-double' | 'none-single' | 'double' | 'single';
+	stringQuotes?: 'double' | 'single';
+	trailingCommas?: 'none' | 'all';
 }
 
 export interface SortOptions extends LSPFormattingOptions {

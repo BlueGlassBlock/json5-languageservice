@@ -1,6 +1,6 @@
 {
   "name": "@blueglassblock/json5-languageservice",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Language service for JSON5",
   "main": "./lib/umd/jsonLanguageService.js",
   "typings": "./lib/umd/jsonLanguageService",
@@ -33,16 +33,17 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@blueglassblock/json5-kit": "^0.1.0",
+    "@blueglassblock/json5-kit": "^0.2.0",
     "@vscode/l10n": "^0.0.18",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
     "vscode-uri": "^3.0.8"
   },
   "scripts": {
-    "prepack": "npm run clean && npm run compile-esm && npm run test && npm run remove-sourcemap-refs",
-    "compile": "tsc -p ./src",
+    "prepack": "npm run clean && npm run compile && npm run test && npm run remove-sourcemap-refs",
+    "compile-umd": "tsc -p ./src",
     "compile-esm": "tsc -p ./src/tsconfig.esm.json",
+    "compile": "npm run compile-umd && npm run compile-esm",
     "clean": "rimraf lib",
     "remove-sourcemap-refs": "node ./build/remove-sourcemap-refs.js",
     "watch": "tsc -w -p ./src",

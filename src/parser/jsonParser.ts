@@ -108,10 +108,12 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
 export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
 	public type: 'string' = 'string';
 	public value: string;
+	public quote: null | 'single' | 'double';
 
 	constructor(parent: ASTNode | undefined, offset: number, length?: number) {
 		super(parent, offset, length);
 		this.value = '';
+		this.quote = 'double';
 	}
 }
 
@@ -1341,7 +1343,7 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 
 		const node = new StringASTNodeImpl(parent, scanner.getTokenOffset());
 		node.value = scanner.getTokenValue();
-
+		node.quote = text.charAt(node.offset) === '\'' ? 'single' : 'double';
 		return _finalize(node, true);
 	}
 
@@ -1352,7 +1354,7 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 
 		const node = new StringASTNodeImpl(parent, scanner.getTokenOffset());
 		node.value = scanner.getTokenValue();
-
+		node.quote = null;
 		return _finalize(node, true);
 	}
 

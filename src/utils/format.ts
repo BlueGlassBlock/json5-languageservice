@@ -13,7 +13,10 @@ export function format(documentToFormat: TextDocument, formattingOptions?: Forma
 		insertSpaces: formattingOptions?.insertSpaces === true, 
 		insertFinalNewline: formattingOptions?.insertFinalNewline === true, 
 		eol: '\n', 
-		keepLines : formattingOptions?.keepLines === true 
+		keepLines : formattingOptions?.keepLines === true,
+		keyQuotes: formattingOptions?.keyQuotes,
+		stringQuotes: formattingOptions?.stringQuotes,
+		trailingCommas: formattingOptions?.trailingCommas,
 	};
 	return formatJSON(documentToFormat.getText(), range, options).map(edit => {
 		return TextEdit.replace(Range.create(documentToFormat.positionAt(edit.offset), documentToFormat.positionAt(edit.offset + edit.length)), edit.content);
