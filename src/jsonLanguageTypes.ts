@@ -128,6 +128,16 @@ export interface LanguageSettings {
 	 * A list of known schemas and/or associations of schemas to file names.
 	 */
 	schemas?: SchemaConfiguration[];
+
+	/**
+	 * If set, key completions will quote accordingly.
+	 */
+	keyQuotes?: 'double' | 'single' | 'none-single' | 'none-double';
+
+	/**
+	 * If set, string value completions will quote accordingly.
+	 */
+	stringQuotes?: 'double' | 'single';
 }
 
 export type SeverityLevel = 'error' | 'warning' | 'ignore';

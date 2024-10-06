@@ -60,15 +60,17 @@ suite('JSON Completion', () => {
 		value = value.substr(0, offset) + value.substr(offset + 1);
 
 		const ls = getLanguageService({ clientCapabilities });
-		if (schema) {
-			ls.configure({
-				schemas: [{
-					uri: 'http://myschemastore/test1',
-					schema,
-					fileMatch: ["*.json"]
-				}]
-			});
-		}
+
+		ls.configure({
+			schemas: schema ? [{
+				uri: 'http://myschemastore/test1',
+				schema,
+				fileMatch: ["*.json"]
+			}] : undefined,
+			keyQuotes: 'double',
+			stringQuotes: 'double'
+		});
+
 
 		const document = TextDocument.create('test://test/test.json', 'json', 0, value);
 		const position = Position.create(0, offset);

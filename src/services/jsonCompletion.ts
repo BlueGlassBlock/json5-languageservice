@@ -28,12 +28,19 @@ export class JSONCompletion {
 	private supportsMarkdown: boolean | undefined;
 	private supportsCommitCharacters: boolean | undefined;
 	private labelDetailsSupport: boolean | undefined;
+	private keyQuotes?: 'single' | 'double' | 'none-single' | 'none-double';
+	private stringQuotes?: 'single' | 'double';
 
 	constructor(
 		private schemaService: SchemaService.IJSONSchemaService,
 		private contributions: JSONWorkerContribution[] = [],
 		private promiseConstructor: PromiseConstructor = Promise,
 		private clientCapabilities: ClientCapabilities = {}) {
+	}
+
+	public updateQuotePreference(key: typeof this.keyQuotes, string: typeof this.stringQuotes) {
+		this.keyQuotes = key;
+		this.stringQuotes = string;
 	}
 
 	public doResolve(item: CompletionItem): PromiseLike<CompletionItem> {
@@ -300,7 +307,7 @@ export class JSONCompletion {
 				collector.add({
 					kind: CompletionItemKind.Property,
 					label: key,
-					insertText: this.getInsertTextForValue(key, ''),
+					insertText: this.getInsertTextForValue(key, '', 'key'),
 					insertTextFormat: InsertTextFormat.Snippet,
 					filterText: this.getFilterTextForValue(key),
 					documentation: ''
@@ -747,24 +754,26 @@ export class JSONCompletion {
 		});
 	}
 
-	private getLabelForValue(value: any): string {
-		return JSON.stringify(value);
+	private transformString(value: string, stringPref: 'key' | 'string' = 'string'): string {
+		const stripped = JSON.stringify(value).slice(1, -1);
+		const quotes = stringPref === 'key' ? this.keyQuotes || 'none-double' : this.stringQuotes || 'double';
+		return Json.formalizeString(value, stripped, quotes);
 	}
 
-	private getValueFromLabel(value: any): string {
-		return JSON.parse(value);
+	private getLabelForValue(value: any): string {
+		return typeof value === 'string' ? this.transformString(value, 'string') : JSON.stringify(value);
 	}
 
 	private getFilterTextForValue(value: any): string {
-		return JSON.stringify(value);
+		return typeof value === 'string' ? this.transformString(value, 'key') : JSON.stringify(value);
 	}
 
 	private getFilterTextForSnippetValue(value: any): string {
-		return JSON.stringify(value).replace(/\$\{\d+:([^}]+)\}|\$\d+/g, '$1');
+		return this.getFilterTextForValue(value).replace(/\$\{\d+:([^}]+)\}|\$\d+/g, '$1');
 	}
 
 	private getLabelForSnippetValue(value: any): string {
-		const label = JSON.stringify(value);
+		const label = typeof value === 'string' ? this.transformString(value, 'string') : JSON.stringify(value);
 		return label.replace(/\$\{\d+:([^}]+)\}|\$\d+/g, '$1');
 	}
 
@@ -772,14 +781,14 @@ export class JSONCompletion {
 		return text.replace(/[\\\$\}]/g, '\\$&');   // escape $, \ and }
 	}
 
-	private getInsertTextForValue(value: any, separatorAfter: string): string {
+	private getInsertTextForValue(value: any, separatorAfter: string, stringPref: 'key' | 'string' = 'string'): string {
 		const text = JSON.stringify(value, null, '\t');
 		if (text === '{}') {
 			return '{$1}' + separatorAfter;
 		} else if (text === '[]') {
 			return '[$1]' + separatorAfter;
 		}
-		return this.getInsertTextForPlainText(text + separatorAfter);
+		return this.getInsertTextForPlainText((typeof value === 'string' ? this.transformString(value, stringPref) : text) + separatorAfter);
 	}
 
 	private getInsertTextForSnippetValue(value: any, separatorAfter: string): string {
@@ -788,6 +797,7 @@ export class JSONCompletion {
 				if (value[0] === '^') {
 					return value.substr(1);
 				}
+				return this.transformString(value, 'string');
 			}
 			return JSON.stringify(value);
 		};
@@ -803,9 +813,9 @@ export class JSONCompletion {
 				return this.getInsertTextForValue(value, separatorAfter);
 			case 'string':
 				let snippetValue = JSON.stringify(value);
-				snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
+				snippetValue = snippetValue.slice(1, -1); // remove quotes
 				snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
-				return '"${1:' + snippetValue + '}"' + separatorAfter;
+				return Json.formalizeString('${1:' + snippetValue + '}', '${1:' + snippetValue + '}', this.stringQuotes || 'double') + separatorAfter;
 			case 'number':
 			case 'boolean':
 				return '${1:' + JSON.stringify(value) + '}' + separatorAfter;
@@ -855,7 +865,7 @@ export class JSONCompletion {
 
 	private getInsertTextForProperty(key: string, propertySchema: JSONSchema | undefined, addValue: boolean, separatorAfter: string): string {
 
-		const propertyText = this.getInsertTextForValue(key, '');
+		const propertyText = this.getInsertTextForValue(key, '', 'key');
 		if (!addValue) {
 			return propertyText;
 		}
@@ -911,7 +921,7 @@ export class JSONCompletion {
 						value = '$1';
 						break;
 					case 'string':
-						value = '"$1"';
+						value = Json.formalizeString("$1", "$1", this.stringQuotes || 'double');
 						break;
 					case 'object':
 						value = '{$1}';
