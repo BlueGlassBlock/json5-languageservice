@@ -57,6 +57,15 @@ export function getFoldingRanges(document: TextDocument, context?: FoldingRanges
 				break;
 			}
 
+			case SyntaxKind.StringLiteral: {
+				const startLine = document.positionAt(scanner.getTokenOffset()).line;
+				const endLine = document.positionAt(scanner.getTokenOffset() + scanner.getTokenLength()).line;
+				if (scanner.getTokenError() === ScanError.None && startLine < endLine) {
+					addRange({ startLine, endLine, kind: "string" });
+					prevStart = startLine;
+				}
+			}
+
 			case SyntaxKind.LineCommentTrivia: {
 				const text = document.getText().substr(scanner.getTokenOffset(), scanner.getTokenLength());
 				const m = text.match(/^\/\/\s*#(region\b)|(endregion\b)/);

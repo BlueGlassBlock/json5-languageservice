@@ -138,4 +138,16 @@ suite('JSON Folding', () => {
 		assertRanges(input, [r(0, 19, 'array')], 1);
 	});
 
+	test('Fold multiline strings', () => {
+		let input = [
+			/*0*/'[',
+			/*1*/'"foo\\',
+			/*2*/'bar",',
+			/*3*/'"single", "multiple\\',
+			/*4*/'line","spammed\\',
+			/*5*/'together",',
+			/*6*/']'
+		];
+		assertRanges(input, [r(0, 5, "array"), r(1, 2, 'string'), r(3, 4, 'string'), r(4, 5, 'string')]);
+	});
 });
