@@ -58,6 +58,37 @@ export class JSONCompletion {
 
 	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument): PromiseLike<CompletionList> {
 
+		return new CompletionSession(
+			this.schemaService,
+			this.contributions,
+			this.promiseConstructor,
+			this.clientCapabilities,
+			this.supportsMarkdown,
+			this.supportsCommitCharacters,
+			this.labelDetailsSupport,
+			this.keyQuotes,
+			this.stringQuotes
+		).doComplete(document, position, doc);
+		
+	}
+}
+
+class CompletionSession {
+
+	constructor(
+		private schemaService: SchemaService.IJSONSchemaService,
+		private contributions: JSONWorkerContribution[] = [],
+		private promiseConstructor: PromiseConstructor = Promise,
+		private clientCapabilities: ClientCapabilities = {},
+		private supportsMarkdown: boolean | undefined,
+		private supportsCommitCharacters: boolean | undefined,
+		private labelDetailsSupport: boolean | undefined,
+		private keyQuotes?: 'single' | 'double' | 'none-single' | 'none-double',
+		private stringQuotes?: 'single' | 'double') {
+	}
+
+	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument): PromiseLike<CompletionList> {
+
 		const result: CompletionList = {
 			items: [],
 			isIncomplete: false
@@ -148,12 +179,15 @@ export class JSONCompletion {
 				if (node.type === 'string') {
 					const parent = node.parent;
 					if (parent && parent.type === 'property' && parent.keyNode === node) {
+						this.keyQuotes = node.quote || this.keyQuotes;
 						addValue = !parent.valueNode;
 						currentProperty = parent;
 						currentKey = text.substr(node.offset + 1, node.length - 2);
 						if (parent) {
 							node = parent.parent;
 						}
+					} else {
+						this.stringQuotes = node.quote || this.stringQuotes;
 					}
 				}
 			}
