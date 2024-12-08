@@ -278,8 +278,11 @@ class CompletionSession {
 								insertText: this.getInsertTextForProperty(key, propertySchema, addValue, separatorAfter),
 								insertTextFormat: InsertTextFormat.Snippet,
 								filterText: this.getFilterTextForValue(key),
-								documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+								documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || ''
 							};
+							if (propertySchema.completionDetail !== undefined) {
+								proposal.detail = propertySchema.completionDetail;
+							}
 							if (propertySchema.suggestSortText !== undefined) {
 								proposal.sortText = propertySchema.suggestSortText;
 							}
@@ -302,8 +305,11 @@ class CompletionSession {
 							insertText: this.getInsertTextForProperty(name, undefined, addValue, separatorAfter),
 							insertTextFormat: InsertTextFormat.Snippet,
 							filterText: this.getFilterTextForValue(name),
-							documentation: enumDescription || this.fromMarkup(schemaPropertyNames.markdownDescription) || schemaPropertyNames.description || '',
+							documentation: enumDescription || this.fromMarkup(schemaPropertyNames.markdownDescription) || schemaPropertyNames.description || ''
 						};
+						if (schemaPropertyNames.completionDetail !== undefined) {
+							proposal.detail = schemaPropertyNames.completionDetail;
+						}
 						if (schemaPropertyNames.suggestSortText !== undefined) {
 							proposal.sortText = schemaPropertyNames.suggestSortText;
 						}
