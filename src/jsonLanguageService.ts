@@ -38,7 +38,7 @@ export interface LanguageService {
 	configure(settings: LanguageSettings): void;
 	doValidation(document: TextDocument, jsonDocument: JSONDocument, documentSettings?: DocumentLanguageSettings, schema?: JSONSchema): PromiseLike<Diagnostic[]>;
 	parseJSONDocument(document: TextDocument): JSONDocument;
-	newJSONDocument(rootNode: ASTNode, syntaxDiagnostics?: Diagnostic[]): JSONDocument;
+	newJSONDocument(rootNode: ASTNode | undefined, syntaxDiagnostics?: Diagnostic[], comments?: Range[]): JSONDocument;
 	resetSchema(uri: string): boolean;
 	getMatchingSchemas(document: TextDocument, jsonDocument: JSONDocument, schema?: JSONSchema): PromiseLike<MatchingSchema[]>;
 	getLanguageStatus(document: TextDocument, jsonDocument: JSONDocument): JSONLanguageStatus;
@@ -53,7 +53,7 @@ export interface LanguageService {
 	getSelectionRanges(document: TextDocument, positions: Position[], doc: JSONDocument): SelectionRange[];
 	findDefinition(document: TextDocument, position: Position, doc: JSONDocument): PromiseLike<DefinitionLink[]>;
 	findLinks(document: TextDocument, doc: JSONDocument): PromiseLike<DocumentLink[]>;
-	format(document: TextDocument, range: Range, options: FormattingOptions): TextEdit[];
+	format(document: TextDocument, range: Range | undefined, options: FormattingOptions): TextEdit[];
 	sort(document: TextDocument, options: SortOptions): TextEdit[];
 }
 
@@ -80,7 +80,7 @@ export function getLanguageService(params: LanguageServiceParams): LanguageServi
 		doValidation: jsonValidation.doValidation.bind(jsonValidation),
 		getLanguageStatus: jsonValidation.getLanguageStatus.bind(jsonValidation),
 		parseJSONDocument: (document: TextDocument) => parseJSON(document, { collectComments: true }),
-		newJSONDocument: (root: ASTNode, diagnostics: Diagnostic[]) => newJSONDocument(root, diagnostics),
+		newJSONDocument: (root: ASTNode | undefined, diagnostics?: Diagnostic[], comments?: Range[]) => newJSONDocument(root, diagnostics, comments),
 		getMatchingSchemas: jsonSchemaService.getMatchingSchemas.bind(jsonSchemaService),
 		doResolve: jsonCompletion.doResolve.bind(jsonCompletion),
 		doComplete: jsonCompletion.doComplete.bind(jsonCompletion),
@@ -93,7 +93,7 @@ export function getLanguageService(params: LanguageServiceParams): LanguageServi
 		getSelectionRanges,
 		findDefinition: () => Promise.resolve([]),
 		findLinks,
-		format: (document: TextDocument, range: Range, options: FormattingOptions) => format(document, options, range),
+		format: (document: TextDocument, range: Range | undefined, options: FormattingOptions) => format(document, options, range),
 		sort: (document: TextDocument, options: FormattingOptions) => sort(document, options)
 	};
 }
