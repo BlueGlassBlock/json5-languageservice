@@ -33,7 +33,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "@blueglassblock/json5-kit": "^0.2.4",
+    "@blueglassblock/json5-kit": "^0.3.0",
     "@vscode/l10n": "^0.0.18",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
