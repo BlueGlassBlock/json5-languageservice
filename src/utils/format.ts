@@ -17,6 +17,8 @@ export function format(documentToFormat: TextDocument, formattingOptions?: Forma
 		keyQuotes: formattingOptions?.keyQuotes,
 		stringQuotes: formattingOptions?.stringQuotes,
 		trailingCommas: formattingOptions?.trailingCommas,
+		startIgnoreDirective: formattingOptions?.startIgnoreDirective,
+		endIgnoreDirective: formattingOptions?.endIgnoreDirective
 	};
 	return formatJSON(documentToFormat.getText(), range, options).map(edit => {
 		return TextEdit.replace(Range.create(documentToFormat.positionAt(edit.offset), documentToFormat.positionAt(edit.offset + edit.length)), edit.content);

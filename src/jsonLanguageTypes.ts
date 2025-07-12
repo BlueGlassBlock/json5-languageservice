@@ -368,6 +368,8 @@ export interface FormattingOptions extends LSPFormattingOptions {
 	keyQuotes?: 'none-double' | 'none-single' | 'double' | 'single';
 	stringQuotes?: 'double' | 'single';
 	trailingCommas?: 'none' | 'all';
+	startIgnoreDirective?: string;
+	endIgnoreDirective?: string;
 }
 
 export interface SortOptions extends LSPFormattingOptions {
