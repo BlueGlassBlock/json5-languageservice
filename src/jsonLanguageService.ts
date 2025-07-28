@@ -75,6 +75,7 @@ export function getLanguageService(params: LanguageServiceParams): LanguageServi
 			settings.schemas?.forEach(jsonSchemaService.registerExternalSchema.bind(jsonSchemaService));
 			jsonValidation.configure(settings);
 			jsonCompletion.updateQuotePreference(settings.keyQuotes, settings.stringQuotes);
+			jsonDocumentSymbols.updateDecorateColors(settings.decorateAllColors || false);
 		},
 		resetSchema: (uri: string) => jsonSchemaService.onResourceChange(uri),
 		doValidation: jsonValidation.doValidation.bind(jsonValidation),

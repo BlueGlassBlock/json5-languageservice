@@ -1,6 +1,6 @@
 {
   "name": "@blueglassblock/json5-languageservice",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Language service for JSON5",
   "main": "./lib/umd/jsonLanguageService.js",
   "typings": "./lib/umd/jsonLanguageService",

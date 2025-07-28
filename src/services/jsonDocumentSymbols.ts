@@ -5,7 +5,7 @@
 
 import * as Parser from '../parser/jsonParser';
 import * as Strings from '../utils/strings';
-import { colorFromHex } from '../utils/colors';
+import * as colorUtils from '../utils/colors';
 import * as l10n from '@vscode/l10n';
 
 import {
@@ -17,7 +17,13 @@ import { IJSONSchemaService } from "./jsonSchemaService";
 
 export class JSONDocumentSymbols {
 
+	private decorateAllColors: boolean = false;
+
 	constructor(private schemaService: IJSONSchemaService) {
+	}
+
+	public updateDecorateColors(decorateAllColors: boolean): void {
+		this.decorateAllColors = decorateAllColors;
 	}
 
 	public findDocumentSymbols(document: TextDocument, doc: Parser.JSONDocument, context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }): SymbolInformation[] {
@@ -237,19 +243,43 @@ export class JSONDocumentSymbols {
 	}
 
 	public findDocumentColors(document: TextDocument, doc: Parser.JSONDocument, context?: DocumentSymbolsContext): PromiseLike<ColorInformation[]> {
+		let limit = context && typeof context.resultLimit === 'number' ? context.resultLimit : Number.MAX_VALUE;
+
+		if (this.decorateAllColors) {
+			const result: ColorInformation[] = [];
+			doc.visit((node) => {
+				if (node.type === 'string') {
+					const color = colorUtils.colorFromString(Parser.getNodeValue(node));
+					if (color) {
+						const range = getInnerRange(document, node);
+						result.push({ color, range });
+						limit--;
+						if (limit <= 0) {
+							if (context && context.onResultLimitExceeded) {
+								context.onResultLimitExceeded(document.uri);
+							}
+							return false; // stop visiting
+						}
+					}
+				}
+				return true;
+			});
+			return Promise.resolve(result);
+		}
+
 		return this.schemaService.getSchemaForResource(document.uri, doc).then(schema => {
 			const result: ColorInformation[] = [];
 			if (schema) {
-				let limit = context && typeof context.resultLimit === 'number' ? context.resultLimit : Number.MAX_VALUE;
+
 				const matchingSchemas = doc.getMatchingSchemas(schema.schema);
 				const visitedNode: { [nodeId: string]: boolean } = {};
 				for (const s of matchingSchemas) {
 					if (!s.inverted && s.schema && (s.schema.format === 'color' || s.schema.format === 'color-hex') && s.node && s.node.type === 'string') {
 						const nodeId = String(s.node.offset);
 						if (!visitedNode[nodeId]) {
-							const color = colorFromHex(Parser.getNodeValue(s.node));
+							const color = colorUtils.colorFromString(Parser.getNodeValue(s.node));
 							if (color) {
-								const range = getRange(document, s.node);
+								const range = getInnerRange(document, s.node);
 								result.push({ color, range });
 							}
 							visitedNode[nodeId] = true;
@@ -269,25 +299,84 @@ export class JSONDocumentSymbols {
 	}
 
 	public getColorPresentations(document: TextDocument, doc: Parser.JSONDocument, color: Color, range: Range): ColorPresentation[] {
-		const result: ColorPresentation[] = [];
-		const red256 = Math.round(color.red * 255), green256 = Math.round(color.green * 255), blue256 = Math.round(color.blue * 255);
+		// https://github.com/microsoft/vscode-css-languageservice/blob/f475d3faf0b9bdf437146ceb329f5c54210da028/src/services/cssNavigation.ts#L334
+		const labels: string[] = [];
 
-		function toTwoDigitHex(n: number): string {
+		const r = Math.round(color.red * 255), g = Math.round(color.green * 255), b = Math.round(color.blue * 255);
+
+		function hexToTwoDigits(n: number): string {
 			const r = n.toString(16);
 			return r.length !== 2 ? '0' + r : r;
 		}
 
 		let label;
-		if (color.alpha === 1) {
-			label = `#${toTwoDigitHex(red256)}${toTwoDigitHex(green256)}${toTwoDigitHex(blue256)}`;
-		} else {
-			label = `#${toTwoDigitHex(red256)}${toTwoDigitHex(green256)}${toTwoDigitHex(blue256)}${toTwoDigitHex(Math.round(color.alpha * 255))}`;
-		}
-		result.push({ label: label, textEdit: TextEdit.replace(range, JSON.stringify(label)) });
 
-		return result;
+		if (color.alpha === 1) {
+			label = `#${hexToTwoDigits(r)}${hexToTwoDigits(g)}${hexToTwoDigits(b)}`;
+		}
+		else {
+			const a = Math.round(color.alpha * 255);
+			label = `#${hexToTwoDigits(r)}${hexToTwoDigits(g)}${hexToTwoDigits(b)}${hexToTwoDigits(a)}`;
+		}
+		labels.push(label);
+
+		if (color.alpha === 1) {
+			label = `rgb(${r}, ${g}, ${b})`;
+		}
+		else {
+			label = `rgba(${r}, ${g}, ${b}, ${color.alpha})`;
+		}
+		labels.push(label);
+
+		const hsl = colorUtils.hslFromColor(color);
+		if (hsl.a === 1) {
+			label = `hsl(${hsl.h}, ${Math.round(hsl.s * 100)}%, ${Math.round(hsl.l * 100)}%)`;
+		} else {
+			label = `hsla(${hsl.h}, ${Math.round(hsl.s * 100)}%, ${Math.round(hsl.l * 100)}%, ${hsl.a})`;
+		}
+		labels.push(label);
+
+		const hwb = colorUtils.hwbFromColor(color);
+		if (hwb.a === 1) {
+			label = `hwb(${hwb.h} ${Math.round(hwb.w * 100)}% ${Math.round(hwb.b * 100)}%)`;
+		} else {
+			label = `hwb(${hwb.h} ${Math.round(hwb.w * 100)}% ${Math.round(hwb.b * 100)}% / ${hwb.a})`;
+		}
+		labels.push(label);
+
+		const lab = colorUtils.labFromColor(color);
+		if (lab.alpha === 1) {
+			label = `lab(${lab.l}% ${lab.a} ${lab.b})`;
+		} else {
+			label = `lab(${lab.l}% ${lab.a} ${lab.b} / ${lab.alpha})`;
+		}
+		labels.push(label);
+
+		const lch = colorUtils.lchFromColor(color);
+		if (lch.alpha === 1) {
+			label = `lch(${lch.l}% ${lch.c} ${lch.h})`;
+		} else {
+			label = `lch(${lch.l}% ${lch.c} ${lch.h} / ${lch.alpha})`;
+		}
+		labels.push(label);
+
+		const oklab = colorUtils.oklabFromColor(color);
+		label = (oklab.alpha === 1) ? `oklab(${oklab.l}% ${oklab.a} ${oklab.b})` : `oklab(${oklab.l}% ${oklab.a} ${oklab.b} / ${oklab.alpha})`;
+		labels.push(label);
+
+		const oklch = colorUtils.oklchFromColor(color);
+		label = (oklch.alpha === 1) ? `oklch(${oklch.l}% ${oklch.c} ${oklch.h})` : `oklch(${oklch.l}% ${oklch.c} ${oklch.h} / ${oklch.alpha})`;
+		labels.push(label);
+
+		return labels.map(label => {
+			return { label: label, textEdit: TextEdit.replace(range, label) };
+		});
 	}
 
+}
+// hsl(343, 100%, 50%)
+function getInnerRange(document: TextDocument, node: ASTNode) {
+	return Range.create(document.positionAt(node.offset + 1), document.positionAt(node.offset + node.length - 1));
 }
 
 function getRange(document: TextDocument, node: ASTNode) {

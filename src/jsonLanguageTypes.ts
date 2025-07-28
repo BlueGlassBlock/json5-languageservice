@@ -125,6 +125,11 @@ export interface LanguageSettings {
 	validate?: boolean;
 
 	/**
+	 * If set, all color strings will have color presentations, regardless of the schema.
+	 */
+	decorateAllColors?: boolean;
+
+	/**
 	 * A list of known schemas and/or associations of schemas to file names.
 	 */
 	schemas?: SchemaConfiguration[];
