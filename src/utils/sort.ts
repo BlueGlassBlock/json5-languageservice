@@ -9,15 +9,20 @@ import { format } from './format';
 import { PropertyTree, Container } from './propertyTree';
 
 export function sort(documentToSort: TextDocument, formattingOptions: SortOptions): TextEdit[] {
-    const options: FormattingOptions = {
+    const initialOptions: FormattingOptions = {
         ...formattingOptions,
         keepLines: false, // keepLines must be false so that the properties are on separate lines for the sorting
+        trailingCommas: 'none' // trailingCommas must be none so that we can add and remove commas as needed during the sorting
     };
-    const formattedJsonString: string = TextDocument.applyEdits(documentToSort, format(documentToSort, options, undefined));
+    const formattedJsonString: string = TextDocument.applyEdits(documentToSort, format(documentToSort, initialOptions, undefined));
     const formattedJsonDocument = TextDocument.create('test://test.json', 'json', 0, formattedJsonString);
     const jsonPropertyTree: PropertyTree = findJsoncPropertyTree(formattedJsonDocument);
     const sortedJsonDocument = sortJsoncDocument(formattedJsonDocument, jsonPropertyTree);
-    const edits: TextEdit[] = format(sortedJsonDocument, options, undefined);
+    const finalOptions: FormattingOptions = {
+        ...initialOptions,
+        trailingCommas: formattingOptions.trailingCommas,
+    };
+    const edits: TextEdit[] = format(sortedJsonDocument, finalOptions, undefined);
     const sortedAndFormattedJsonDocument = TextDocument.applyEdits(sortedJsonDocument, edits);
     return [TextEdit.replace(Range.create(Position.create(0, 0), documentToSort.positionAt(documentToSort.getText().length)), sortedAndFormattedJsonDocument)];
 }
@@ -40,7 +45,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
     let token: SyntaxKind | undefined = undefined;
     // Line number of the last token found
     let lastTokenLine: number = 0;
-    // Total number of characters on the lines prior to current line 
+    // Total number of characters on the lines prior to current line
     let numberOfCharactersOnPreviousLines: number = 0;
 
     // The last token scanned that is not trivial, nor a comment
@@ -62,13 +67,13 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
 
     // Boolean indicating that the current property end line number needs to be updated. Used only when block comments are encountered.
     let updateLastPropertyEndLineNumber: boolean = false;
-    // Boolean indicating that the beginning line number should be updated. Used only when block comments are encountered. 
+    // Boolean indicating that the beginning line number should be updated. Used only when block comments are encountered.
     let updateBeginningLineNumber: boolean = false;
 
     while ((token = scanner.scan()) !== SyntaxKind.EOF) {
 
         // In the case when a block comment has been encountered that starts on the same line as the comma ending a property, update the end line of that
-        // property so that it covers the block comment. For example, if we have: 
+        // property so that it covers the block comment. For example, if we have:
         // 1. "key" : {}, /* some block
         // 2. comment */
         // Then, the end line of the property "key" should be line 2 not line 1
@@ -85,7 +90,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
                 || secondToLastNonTriviaNonCommentToken === SyntaxKind.CloseBracketToken) {
                 lastProperty!.endLineNumber = endLineNumber - 1;
             }
-            // Update the end line number in the case when the last property visited is a simple property 
+            // Update the end line number in the case when the last property visited is a simple property
             else {
                 currentProperty!.endLineNumber = endLineNumber - 1;
             }

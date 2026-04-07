@@ -379,4 +379,5 @@ export interface FormattingOptions extends LSPFormattingOptions {
 
 export interface SortOptions extends LSPFormattingOptions {
 	insertFinalNewline?: boolean;
+	trailingCommas?: 'none' | 'all';
 }

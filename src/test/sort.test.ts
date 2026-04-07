@@ -1,11 +1,11 @@
 
-import { getLanguageService, ClientCapabilities, TextDocument, SortOptions } from '../jsonLanguageService';
+import { getLanguageService, ClientCapabilities, TextDocument, SortOptions, FormattingOptions } from '../jsonLanguageService';
 import * as assert from 'assert';
 
 suite('Sort JSON', () => {
 
     const ls = getLanguageService({ clientCapabilities: ClientCapabilities.LATEST });
-    let formattingOptions = { tabSize: 2, insertSpaces: true, keepLines: false, eol: '\n', insertFinalNewline: false };
+    let formattingOptions: FormattingOptions = { tabSize: 2, insertSpaces: true, keepLines: false, eol: '\n', insertFinalNewline: false };
 
     function testSort(unsorted: string, expected: string, options: SortOptions) {
         let document = TextDocument.create('test://test.json', 'json', 0, unsorted);
@@ -1523,5 +1523,44 @@ suite('Sort JSON', () => {
         ].join('\n');
 
         testSort(content, expected, formattingOptions);
+    });
+
+     test('Sort JSON5 with trailing comma on object with nested array', () => {
+        const content = [
+            '{',
+            '  tools: {',
+            '    allow: [],',
+            '  },',
+            '}'
+        ].join('\n');
+
+        const expected = [
+            '{',
+            '  tools: {',
+            '    allow: [],',
+            '  },',
+            '}'
+        ].join('\n');
+        const trailingCommaFormatingOptions: FormattingOptions = {...formattingOptions, trailingCommas: 'all'};
+        testSort(content, expected, trailingCommaFormatingOptions);
+    });
+      test('Sort JSON5 with trailing comma on object with nested object', () => {
+        const content = [
+            '{',
+            '  tools: {',
+            '    allow: {},',
+            '  },',
+            '}'
+        ].join('\n');
+
+        const expected = [
+            '{',
+            '  tools: {',
+            '    allow: {},',
+            '  },',
+            '}'
+        ].join('\n');
+        const trailingCommaFormatingOptions: FormattingOptions = {...formattingOptions, trailingCommas: 'all'};
+        testSort(content, expected, trailingCommaFormatingOptions);
     });
 });
