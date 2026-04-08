@@ -3,20 +3,20 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as Parser from '../parser/jsonParser';
+import * as Parser from '../parser/jsonParser.js';
 import * as Json from '@blueglassblock/json5-kit';
-import * as SchemaService from './jsonSchemaService';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { JSONWorkerContribution, CompletionsCollector, JSONCompletionItem } from '../jsonContributions';
-import { stringifyObject } from '../utils/json';
-import { endsWith, extendedRegExp } from '../utils/strings';
-import { isDefined } from '../utils/objects';
+import * as SchemaService from './jsonSchemaService.js';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema.js';
+import { JSONWorkerContribution, CompletionsCollector, JSONCompletionItem } from '../jsonContributions.js';
+import { stringifyObject } from '../utils/json.js';
+import { endsWith, extendedRegExp } from '../utils/strings.js';
+import { isDefined } from '../utils/objects.js';
 import {
 	PromiseConstructor,
 	ASTNode, ObjectASTNode, ArrayASTNode, PropertyASTNode, ClientCapabilities,
 	TextDocument,
 	CompletionItem, CompletionItemKind, CompletionList, Position, Range, TextEdit, InsertTextFormat, MarkupContent, MarkupKind
-} from '../jsonLanguageTypes';
+} from '../jsonLanguageTypes.js';
 
 import * as l10n from '@vscode/l10n';
 
@@ -328,6 +328,11 @@ class CompletionSession {
 							const enumSortText = schemaPropertyNames.enumSortTexts?.[i];
 							const enumDetails = schemaPropertyNames.enumDetails?.[i];
 							propertyNameCompletionItem(schemaPropertyNames.enum[i], enumDescription, enumDetails, enumSortText);
+						}
+					}
+					if (schemaPropertyNames.examples) {
+						for (let i = 0; i < schemaPropertyNames.examples.length; i++) {
+							propertyNameCompletionItem(schemaPropertyNames.examples[i], undefined, undefined, undefined);
 						}
 					}
 					if (schemaPropertyNames.const) {

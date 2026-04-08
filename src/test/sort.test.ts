@@ -1,6 +1,7 @@
 
-import { getLanguageService, ClientCapabilities, TextDocument, SortOptions, FormattingOptions } from '../jsonLanguageService';
+import { getLanguageService, ClientCapabilities, TextDocument, SortOptions, FormattingOptions } from '../jsonLanguageService.js';
 import * as assert from 'assert';
+import { suite, test } from 'node:test';
 
 suite('Sort JSON', () => {
 
@@ -1484,6 +1485,26 @@ suite('Sort JSON', () => {
         testSort(content, expected, formattingOptions);
     });
 
+    test('sorting symbols before letters', () => {
+        const content = [
+            '{',
+            '  "Test": "Test",',
+            '  "test": "test",',
+            '  "[test]: "test',
+            '}'
+        ].join('\n');
+
+        const expected = [
+            '{',
+            '  "[test]: "test,',
+            '  "test": "test",',
+            '  "Test": "Test"',
+            '}'
+        ].join('\n');
+
+        testSort(content, expected, formattingOptions);
+    });
+
 
     test('sorting symbols before letters', () => {
         const content = [
@@ -1525,7 +1546,7 @@ suite('Sort JSON', () => {
         testSort(content, expected, formattingOptions);
     });
 
-     test('Sort JSON5 with trailing comma on object with nested array', () => {
+    test('Sort JSON5 with trailing comma on object with nested array', () => {
         const content = [
             '{',
             '  tools: {',
@@ -1541,10 +1562,10 @@ suite('Sort JSON', () => {
             '  },',
             '}'
         ].join('\n');
-        const trailingCommaFormatingOptions: FormattingOptions = {...formattingOptions, trailingCommas: 'all'};
+        const trailingCommaFormatingOptions: FormattingOptions = { ...formattingOptions, trailingCommas: 'all' };
         testSort(content, expected, trailingCommaFormatingOptions);
     });
-      test('Sort JSON5 with trailing comma on object with nested object', () => {
+    test('Sort JSON5 with trailing comma on object with nested object', () => {
         const content = [
             '{',
             '  tools: {',
@@ -1560,7 +1581,7 @@ suite('Sort JSON', () => {
             '  },',
             '}'
         ].join('\n');
-        const trailingCommaFormatingOptions: FormattingOptions = {...formattingOptions, trailingCommas: 'all'};
+        const trailingCommaFormatingOptions: FormattingOptions = { ...formattingOptions, trailingCommas: 'all' };
         testSort(content, expected, trailingCommaFormatingOptions);
     });
 });

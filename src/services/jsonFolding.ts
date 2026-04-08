@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { createScanner, SyntaxKind, ScanError } from '@blueglassblock/json5-kit';
-import { TextDocument, FoldingRangeKind, FoldingRange, FoldingRangesContext, Position } from '../jsonLanguageTypes';
+import { TextDocument, FoldingRangeKind, FoldingRange, FoldingRangesContext, Position } from '../jsonLanguageTypes.js';
 
 export function getFoldingRanges(document: TextDocument, context?: FoldingRangesContext): FoldingRange[] {
 	const ranges: FoldingRange[] = [];

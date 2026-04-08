@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as Json from '@blueglassblock/json5-kit';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isNumber, equals, isBoolean, isString, isDefined, isObject } from '../utils/objects';
-import { extendedRegExp, stringLength } from '../utils/strings';
-import { TextDocument, ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode, JSONPath, ErrorCode, Diagnostic, DiagnosticSeverity, Range, SchemaDraft } from '../jsonLanguageTypes';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema.js';
+import { isNumber, equals, isBoolean, isString, isDefined, isObject } from '../utils/objects.js';
+import { extendedRegExp, stringLength } from '../utils/strings.js';
+import { TextDocument, ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode, JSONPath, ErrorCode, Diagnostic, DiagnosticSeverity, Range, SchemaDraft } from '../jsonLanguageTypes.js';
 import { URI } from 'vscode-uri';
 
 import * as l10n from '@vscode/l10n';
@@ -196,7 +196,6 @@ export function getSchemaDraftFromId(schemaId: string): SchemaDraft | undefined 
 	return schemaDraftFromId[normalizeId(schemaId)] ?? undefined;
 }
 
-
 const schemaDraftFromId: { [id: string]: SchemaDraft } = {
 	'https://json-schema.org/draft-03/schema': SchemaDraft.v3,
 	'https://json-schema.org/draft-04/schema': SchemaDraft.v4,
@@ -334,7 +333,7 @@ export class ValidationResult {
 
 }
 
-export function newJSONDocument(root: ASTNode | undefined, diagnostics: Diagnostic[] = [], comments: Range[] = []): JSONDocument {
+export function newJSONDocument(root: ASTNode | undefined, diagnostics: Diagnostic[] = [], comments: Range[] = []) {
 	return new JSONDocument(root, diagnostics, comments);
 }
 
@@ -488,9 +487,11 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 		const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean) => {
 			const matches = [];
 
+			const alternativesToTest = _tryDiscriminatorOptimization(alternatives) ?? alternatives;
+
 			// remember the best match that is used for error messages
 			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } | undefined = undefined;
-			for (const subSchemaRef of alternatives) {
+			for (const subSchemaRef of alternativesToTest) {
 				const subSchema = asSchema(subSchemaRef);
 				const subValidationResult = new ValidationResult();
 				const subMatchingSchemas = matchingSchemas.newSub();
@@ -623,7 +624,88 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 		}
 	}
 
+	function _tryDiscriminatorOptimization(alternatives: JSONSchemaRef[]): JSONSchemaRef[] | undefined {
+		if (alternatives.length < 2) {
+			return undefined;
+		}
 
+		const buildConstMap = (getSchemas: (alt: JSONSchema, idx: number) => [string | number, JSONSchema][] | undefined) => {
+			const constMap = new Map<string | number, Map<any, number[]>>();
+
+			for (let i = 0; i < alternatives.length; i++) {
+				const schemas = getSchemas(asSchema(alternatives[i]), i);
+				if (!schemas) {
+					return undefined; // Early exit if any alternative can't be processed
+				}
+
+				schemas.forEach(([key, schema]) => {
+					if (schema.const !== undefined) {
+						if (!constMap.has(key)) {
+							constMap.set(key, new Map());
+						}
+						const valueMap = constMap.get(key)!;
+						if (!valueMap.has(schema.const)) {
+							valueMap.set(schema.const, []);
+						}
+						valueMap.get(schema.const)!.push(i);
+					} else if (schema.enum && Array.isArray(schema.enum)) {
+						for (const enumValue of schema.enum) {
+							if (!constMap.has(key)) {
+								constMap.set(key, new Map());
+							}
+							const valueMap = constMap.get(key)!;
+							if (!valueMap.has(enumValue)) {
+								valueMap.set(enumValue, []);
+							}
+							valueMap.get(enumValue)!.push(i);
+						}
+					}
+				});
+			}
+			return constMap;
+		};
+
+		const findDiscriminator = (constMap: Map<string | number, Map<any, number[]>>, getValue: (key: string | number) => any) => {
+			for (const [key, valueMap] of constMap) {
+				const coveredAlts = new Set<number>();
+				valueMap.forEach(indices => indices.forEach(idx => coveredAlts.add(idx)));
+
+				if (coveredAlts.size === alternatives.length) {
+					const discriminatorValue = getValue(key);
+					const matchingIndices = valueMap.get(discriminatorValue);
+					if (matchingIndices?.length) {
+						return matchingIndices.map(idx => alternatives[idx]);
+					}
+					break; // Found valid discriminator but no match
+				}
+			}
+			return undefined;
+		};
+
+		if (node.type === 'object' && node.properties?.length) {
+			const constMap = buildConstMap((schema) =>
+				schema.properties ? Object.entries(schema.properties).map(([k, v]) => [k, asSchema(v)]) : undefined
+			);
+			if (constMap) {
+				return findDiscriminator(constMap, (propName) => {
+					const prop = node.properties.find(p => p.keyNode.value === propName);
+					return prop?.valueNode?.type === 'string' ? prop.valueNode.value : undefined;
+				});
+			}
+		} else if (node.type === 'array' && node.items?.length) {
+			const constMap = buildConstMap((schema) => {
+				const itemSchemas = schema.prefixItems || (Array.isArray(schema.items) ? schema.items : undefined);
+				return itemSchemas ? itemSchemas.map((item, idx) => [idx, asSchema(item)]) : undefined;
+			});
+			if (constMap) {
+				return findDiscriminator(constMap, (itemIndex) => {
+					const item = node.items[itemIndex as number];
+					return item?.type === 'string' ? item.value : undefined;
+				});
+			}
+		}
+		return undefined;
+	}
 
 	function _validateNumberNode(node: NumberASTNode): void {
 		const val = node.value;
@@ -721,7 +803,7 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 
 		if (isString(schema.pattern)) {
 			const regex = extendedRegExp(schema.pattern);
-			if (regex && (!regex.test(node.value))) {
+			if (regex && !(regex.test(node.value))) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
 					message: schema.patternErrorMessage || schema.errorMessage || l10n.t('String does not match the pattern of "{0}".', schema.pattern)
@@ -1098,7 +1180,7 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			for (const f of node.properties) {
 				const key = f.keyNode;
 				if (key) {
-					validate(key, propertyNames, validationResult, NoOpSchemaCollector.instance, context);
+					validate(key, propertyNames, validationResult, matchingSchemas, context);
 				}
 			}
 		}

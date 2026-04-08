@@ -4,13 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import * as SchemaService from '../services/jsonSchemaService';
-import * as Parser from '../parser/jsonParser';
+import { suite, test } from 'node:test';
+import * as SchemaService from '../services/jsonSchemaService.js';
+import * as Parser from '../parser/jsonParser.js';
 import { promises as fs } from 'fs';
 import * as url from 'url';
 import * as path from 'path';
-import { getLanguageService, JSONSchema, SchemaRequestService, TextDocument, MatchingSchema, LanguageService } from '../jsonLanguageService';
-import { DiagnosticSeverity, SchemaConfiguration } from '../jsonLanguageTypes';
+import { getLanguageService, JSONSchema, SchemaRequestService, TextDocument, MatchingSchema, LanguageService } from '../jsonLanguageService.js';
+import { DiagnosticSeverity, ErrorCode, Range, SchemaConfiguration } from '../jsonLanguageTypes.js';
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 function toDocument(text: string, config?: Parser.JSONDocumentConfig, uri = 'foo://bar/file.json'): { textDoc: TextDocument, jsonDoc: Parser.JSONDocument } {
 
@@ -1079,8 +1082,13 @@ suite('JSON Schema', () => {
 		service.clearExternalSchemas();
 
 		resolvedSchema = await service.getSchemaForResource('main.bar');
-		assert.strictEqual(resolvedSchema?.errors.length, 1);
-		assert.strictEqual(resolvedSchema?.errors[0], "Problems loading reference 'http://myschemastore/myschemafoo': Unable to load schema from 'http://myschemastore/myschemafoo': Resource not found.");
+		const message = "Unable to load schema from 'http://myschemastore/myschemafoo': Resource not found.";
+		assert.deepStrictEqual(resolvedSchema?.errors, [
+			{ 
+				message: message, 
+				code: ErrorCode.SchemaResolveError,
+				relatedInformation: [{ location: { uri: 'http://myschemastore/myschemafoo', range: Range.create(0, 0, 0, 0) }, message: message }]
+			}]);
 
 		service.clearExternalSchemas();
 		service.registerExternalSchema({ uri: id2, schema: schema2 });
@@ -1790,6 +1798,10 @@ suite('JSON Schema', () => {
 				baz: {
 					type: 'boolean',
 					$comment: 'baz',
+				},
+				key: {
+					type: 'string',
+					$comment: 'key',
 				}
 			},
 			properties: {
@@ -1806,6 +1818,9 @@ suite('JSON Schema', () => {
 						}
 					}
 				}
+			},
+			propertyNames: {
+				$ref: "#/definitions/key"
 			}
 		};
 
@@ -1824,6 +1839,7 @@ suite('JSON Schema', () => {
 			assert.fail("No node at offset " + nodeOffset);
 		}
 		assertMatchingSchema(ms, 0, 'schema');
+		assertMatchingSchema(ms, 1, 'key');
 		assertMatchingSchema(ms, 7, 'foo');
 		assertMatchingSchema(ms, 14, 'bar');
 		assertMatchingSchema(ms, 22, 'baz');
@@ -2047,11 +2063,51 @@ suite('JSON Schema', () => {
 		{
 			const { textDoc, jsonDoc } = toDocument('{ }', undefined, 'foo://bar/folder/foo.json');
 			const res = await ls.doValidation(textDoc, jsonDoc);
-			console.log(res);	
 		}
 
 	});
 
+	test('validate against draft-2019-09', async function () {
+		const schema: JSONSchema = {
+			$schema: 'https://json-schema.org/draft/2019-09/schema',
+			type: 'object',
+			properties: {
+				name: {
+					type: 'string',
+					minLength: 4,
+				}
+			},
+			required: ['name']
+		};
 
+		const ls = getLanguageService({});
+		{
+			const { textDoc, jsonDoc } = toDocument(JSON.stringify(schema));
+			assert.deepStrictEqual(jsonDoc.syntaxErrors, []);
+			const resolveError = await ls.doValidation(textDoc, jsonDoc, { schemaRequest: 'error' });
+			assert.deepStrictEqual(resolveError, []);
+		}
+	});
 
+	test('validate against draft-2020-12', async function () {
+		const schema: JSONSchema = {
+			$schema: 'https://json-schema.org/draft/2020-12/schema',
+			type: 'object',
+			properties: {
+				name: {
+					type: 'string',
+					minLength: 4,
+				}
+			},
+			required: ['name']
+		};
+
+		const ls = getLanguageService({});
+		{
+			const { textDoc, jsonDoc } = toDocument(JSON.stringify(schema));
+			assert.deepStrictEqual(jsonDoc.syntaxErrors, []);
+			const resolveError = await ls.doValidation(textDoc, jsonDoc, { schemaRequest: 'error' });
+			assert.deepStrictEqual(resolveError, []);
+		}
+	});
 });

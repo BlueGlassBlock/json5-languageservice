@@ -7,7 +7,7 @@
 
 // FIXME: The conversion algorithm is a bit far from perfect, migrate to https://colorjs.io/ when upstream does it
 
-import { Color } from "../jsonLanguageTypes";
+import { Color } from "../jsonLanguageTypes.js";
 
 const Digit0 = 48;
 const Digit9 = 57;

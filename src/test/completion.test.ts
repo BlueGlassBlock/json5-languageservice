@@ -4,9 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
+import { suite, test } from 'node:test';
 
-import { getLanguageService, JSONSchema, TextDocument, ClientCapabilities, CompletionList, CompletionItemKind, Position, MarkupContent, TextEdit } from '../jsonLanguageService';
-import { repeat } from '../utils/strings';
+import { getLanguageService, JSONSchema, TextDocument, ClientCapabilities, CompletionList, CompletionItemKind, Position, MarkupContent, TextEdit } from '../jsonLanguageService.js';
+import { repeat } from '../utils/strings.js';
 import { CompletionItemLabelDetails } from 'vscode-languageserver-types';
 
 const applyEdits = TextDocument.applyEdits;
@@ -335,6 +336,12 @@ suite('JSON Completion', () => {
 						enum: ['a', 'b'],
 						enumSortTexts: ['2', '1'],
 					},
+				},
+				examples: {
+					type: 'object',
+					propertyNames: {
+						examples: ['a', 'b'],
+					},
 				}
 			}
 		};
@@ -381,6 +388,12 @@ suite('JSON Completion', () => {
 			items: [
 				{ label: 'a', sortText: "2" },
 				{ label: 'b', sortText: "1" },
+			]
+		});
+		await testCompletionsFor('{"examples":{|}}', schema, {
+			items: [
+				{ label: 'a' },
+				{ label: 'b' },
 			]
 		});
 	});
@@ -887,11 +900,13 @@ suite('JSON Completion', () => {
 			]
 		});
 		await testCompletionsFor('{ "type": "1", "a" : { "x": "", "z":"" }, |', schema, {
-			// both alternatives have errors: intellisense proposes all options
-			count: 2,
+			// Prior to the `enum` discriminator optimization, the parser failed to correlate `type: "1"` 
+			// via enums and fell back to offering completions from ALL `oneOf` branches (i.e., both 'b' and 'c').
+			// Now that `enum` properties are properly indexed as discriminators, `type: "1"` flawlessly 
+			// isolates the first branch, so it correctly proposes ONLY the 'b' property from that branch.
+			count: 1,
 			items: [
-				{ label: 'b' },
-				{ label: 'c' }
+				{ label: 'b' }
 			]
 		});
 		await testCompletionsFor('{ "a" : { "x": "", "z":"" }, |', schema, {
@@ -1450,9 +1465,11 @@ suite('JSON Completion', () => {
 			]
 		});
 		await testCompletionsFor('{ "type": "foo|"', schema, {
+			// Since the user explicitly typed "foo", the parser instantly matches the enum discriminator 
+			// for the first `oneOf` branch. Therefore, it discards the second branch (which expects "bar")
+			// and appropriately proposes ONLY "foo", rather than falling back to proposing both options.
 			items: [
-				{ label: '"foo"' },
-				{ label: '"bar"' }
+				{ label: '"foo"' }
 			]
 		});
 	});
