@@ -1,6 +1,6 @@
 {
   "name": "@blueglassblock/json5-languageservice",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Language service for JSON5",
   "type": "module",
   "types": "./lib/esm/jsonLanguageService.d.ts",
